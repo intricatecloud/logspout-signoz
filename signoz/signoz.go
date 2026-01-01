@@ -273,7 +273,7 @@ func sendLogs(logs []LogMessage) error {
 	}
 
 	// Send HTTP POST request
-	fmt.Println("Sending logs to: ", signozLogEndpoint)
+	// fmt.Println("Sending logs to: ", signozLogEndpoint)
 	resp, err := http.Post(signozLogEndpoint, "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		return err
