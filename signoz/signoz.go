@@ -200,7 +200,7 @@ func (a *Adapter) Stream(logStream chan *router.Message) {
 			Attributes:     map[string]string{},
 			Resources: map[string]string{
 				"service.name": serviceName,
-				"hostname":    a.hostname,
+				"host.name":    a.hostname,
 			},
 			Message: message.Data,
 		}
