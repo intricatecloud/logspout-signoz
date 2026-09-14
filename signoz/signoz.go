@@ -190,6 +190,16 @@ func (a *Adapter) Stream(logStream chan *router.Message) {
 		if serviceNameFromSwarmLabel, exists := message.Container.Config.Labels["com.docker.swarm.task.name"]; exists {
 			serviceName = serviceNameFromSwarmLabel
 		}
+		// Nomad's docker driver labels containers with this (among others)
+		// when the client's docker plugin config sets extra_labels -
+		// https://developer.hashicorp.com/nomad/docs/deploy/task-driver/docker#extra_labels.
+		// task_name is preferred over job_name here since it's the
+		// identifier that lines up with a Nomad job's Consul
+		// `service { name = ... }` registration in the common case of one
+		// service per task.
+		if serviceNameFromNomadLabel, exists := message.Container.Config.Labels["com.hashicorp.nomad.task_name"]; exists {
+			serviceName = serviceNameFromNomadLabel
+		}
 		logMessage = LogMessage{
 			Timestamp: int(message.Time.Unix()),
 			//TraceID:        "0", // replace with actual data
@@ -203,6 +213,13 @@ func (a *Adapter) Stream(logStream chan *router.Message) {
 				"host.name":    a.hostname,
 			},
 			Message: message.Data,
+		}
+		// Groups a Nomad job's several task-level services (e.g. one job
+		// with clickhouse/zookeeper/app/collector tasks) under one
+		// namespace, the same way service.namespace is used elsewhere in
+		// the OTel ecosystem to group related services.
+		if jobNameFromNomadLabel, exists := message.Container.Config.Labels["com.hashicorp.nomad.job_name"]; exists {
+			logMessage.Resources["service.namespace"] = jobNameFromNomadLabel
 		}
 		if a.env != "" {
 			logMessage.Resources["deployment.environment"] = a.env
